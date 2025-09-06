@@ -1,249 +1,172 @@
 import { useState } from "react";
-import { 
-  MessageCircle, 
-  Sprout, 
-  Beaker, 
-  Calendar,
-  Home,
-  History,
-  Newspaper,
-  ChevronDown,
-  Bot
-} from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-
+import { motion } from "framer-motion";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-  SidebarHeader,
 } from "@/components/ui/sidebar";
+import {
+  MessageCircle,
+  Sprout,
+  Droplets,
+  Bug,
+  Settings,
+  Home,
+  CloudSun,
+  TrendingUp,
+  Newspaper,
+  Clock,
+  Star
+} from "lucide-react";
 
-const navigationItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "AI Chat", url: "/chat", icon: MessageCircle },
-  { title: "Crop Recommender", url: "/crop-recommender", icon: Sprout },
-  { title: "Fertilizer Guide", url: "/fertilizer-guide", icon: Beaker },
-  { title: "Irrigation Planner", url: "/irrigation-planner", icon: Calendar },
-];
-
-const chatHistoryItems = [
-  "Tomato Pest Control",
-  "Soil pH Analysis",
-  "Seasonal Crop Planning",
-  "Weather Impact Discussion",
-];
-
-const newsItems = [
-  "Sustainable Farming Trends 2024",
-  "Climate-Smart Agriculture",
-  "New Irrigation Technologies",
-  "Organic Fertilizer Benefits",
-];
-
-export function AppSidebar() {
+const AppSidebar = () => {
   const { state } = useSidebar();
   const location = useLocation();
-  const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
-  const [newsOpen, setNewsOpen] = useState(false);
-  
-  const isCollapsed = state === "collapsed";
-  const currentPath = location.pathname;
+  const [activeTab, setActiveTab] = useState("features");
 
-  const getNavClassName = (path: string) => {
-    const isActive = currentPath === path;
-    return `sidebar-item ${isActive ? 'sidebar-item-active' : ''}`;
-  };
+  const features = [
+    { title: "Home", url: "/", icon: Home },
+    { title: "AI Chat", url: "/chat", icon: MessageCircle },
+    { title: "Crop Advisor", url: "/crop-recommender", icon: Sprout },
+    { title: "Pest & Disease Expert", url: "/pest-expert", icon: Bug },
+    { title: "Irrigation Planner", url: "/irrigation-planner", icon: Droplets },
+    { title: "Weather Forecast", url: "/weather-forecast", icon: CloudSun },
+    { title: "Soil & Fertilizer Guide", url: "/fertilizer-guide", icon: Settings },
+    { title: "Market Analyst", url: "/market-analyst", icon: TrendingUp },
+    { title: "Agricultural News", url: "/agriculture-news", icon: Newspaper },
+  ];
+
+  const chatHistory = [
+    { id: 1, title: "Tomato pest identification", time: "2 hours ago", starred: true },
+    { id: 2, title: "Wheat fertilizer recommendations", time: "1 day ago", starred: false },
+    { id: 3, title: "Irrigation schedule for corn", time: "3 days ago", starred: false },
+    { id: 4, title: "Market prices for soybeans", time: "1 week ago", starred: true },
+    { id: 5, title: "Weather forecast discussion", time: "2 weeks ago", starred: false },
+  ];
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
-        <motion.div 
+    <Sidebar className="border-r border-border bg-card">
+      <SidebarHeader className="border-b border-border p-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3"
-          animate={{ 
-            justifyContent: isCollapsed ? "center" : "flex-start" 
-          }}
         >
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Bot className="w-4 h-4 text-primary-foreground" />
+          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+            <Sprout className="w-6 h-6 text-primary-foreground" />
           </div>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="text-lg font-semibold text-sidebar-foreground whitespace-nowrap"
-              >
-                AgriBot
-              </motion.span>
-            )}
-          </AnimatePresence>
+          {state === "expanded" && (
+            <div>
+              <h2 className="text-lg font-bold text-foreground">AgriBot</h2>
+              <p className="text-sm text-muted-foreground">Smart Farming Assistant</p>
+            </div>
+          )}
         </motion.div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3">
-        {/* Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">
-            Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={getNavClassName(item.url)}
+      <SidebarContent className="p-4">
+        {state === "expanded" && (
+          <div className="mb-6">
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setActiveTab("features")}
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
+                  activeTab === "features"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Features
+              </button>
+              <button
+                onClick={() => setActiveTab("history")}
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
+                  activeTab === "history"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Chat History
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "features" && (
+          <SidebarMenu>
+            {features.map((item, index) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to={item.url}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-soft"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`
+                    }
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
                     >
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+                      <item.icon className="w-5 h-5" />
+                    </motion.div>
+                    {state === "expanded" && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 + 0.1 }}
+                        className="font-medium"
                       >
-                        <item.icon className="w-4 h-4" />
-                      </motion.div>
-                      <AnimatePresence>
-                        {!isCollapsed && (
-                          <motion.span
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: "auto" }}
-                            exit={{ opacity: 0, width: 0 }}
-                            className="whitespace-nowrap"
-                          >
-                            {item.title}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                        {item.title}
+                      </motion.span>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        )}
 
-        {!isCollapsed && (
-          <>
-            {/* Chat History */}
-            <SidebarGroup>
+        {activeTab === "history" && state === "expanded" && (
+          <div className="space-y-2">
+            {chatHistory.map((chat, index) => (
               <motion.div
+                key={chat.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: index * 0.1 }}
+                className="p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors group"
               >
-                <SidebarGroupLabel 
-                  className="flex items-center justify-between cursor-pointer text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
-                  onClick={() => setChatHistoryOpen(!chatHistoryOpen)}
-                >
-                  <span className="flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Chat History
-                  </span>
-                  <motion.div
-                    animate={{ rotate: chatHistoryOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </motion.div>
-                </SidebarGroupLabel>
-                
-                <AnimatePresence>
-                  {chatHistoryOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                          {chatHistoryItems.map((item, index) => (
-                            <motion.div
-                              key={item}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                            >
-                              <SidebarMenuItem>
-                                <SidebarMenuButton className="text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground pl-6">
-                                  {item}
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            </motion.div>
-                          ))}
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </motion.div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {chat.title}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Clock className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{chat.time}</span>
+                    </div>
+                  </div>
+                  {chat.starred && (
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   )}
-                </AnimatePresence>
+                </div>
               </motion.div>
-            </SidebarGroup>
-
-            {/* Agricultural News */}
-            <SidebarGroup>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <SidebarGroupLabel 
-                  className="flex items-center justify-between cursor-pointer text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
-                  onClick={() => setNewsOpen(!newsOpen)}
-                >
-                  <span className="flex items-center gap-2">
-                    <Newspaper className="w-4 h-4" />
-                    Agricultural News
-                  </span>
-                  <motion.div
-                    animate={{ rotate: newsOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </motion.div>
-                </SidebarGroupLabel>
-                
-                <AnimatePresence>
-                  {newsOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <SidebarGroupContent>
-                        <SidebarMenu>
-                          {newsItems.map((item, index) => (
-                            <motion.div
-                              key={item}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                            >
-                              <SidebarMenuItem>
-                                <SidebarMenuButton className="text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground pl-6">
-                                  {item}
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            </motion.div>
-                          ))}
-                        </SidebarMenu>
-                      </SidebarGroupContent>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </SidebarGroup>
-          </>
+            ))}
+          </div>
         )}
       </SidebarContent>
     </Sidebar>
   );
-}
+};
+
+export default AppSidebar;
