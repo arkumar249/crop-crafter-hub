@@ -1,5 +1,5 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
+import  AppSidebar  from "./AppSidebar";
 import { motion } from "framer-motion";
 
 interface LayoutProps {

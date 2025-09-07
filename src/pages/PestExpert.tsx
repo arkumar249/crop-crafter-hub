@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Camera, FileImage, Bug, Shield, AlertTriangle } from "lucide-react";
+import axios from "axios";
+import { set } from "date-fns";
+const API_BASE = import.meta.env.VITE_BACKEND_API_BASE
+
 
 const PestExpert = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -8,12 +12,16 @@ const PestExpert = () => {
   const [crop, setCrop] = useState("");
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [imageUrl, setImageUrl] = useState("");
+
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -22,47 +30,43 @@ const PestExpert = () => {
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!selectedImage) return;
-    
-    setIsAnalyzing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setResults({
-        prediction: {
-          name: "Tomato Hornworm",
-          confidence: 95,
-          scientificName: "Manduca quinquemaculata"
-        },
-        solutions: [
-          {
-            type: "Manual Removal",
-            icon: "👋",
-            description: "Hand-pick hornworms from plants during early morning or evening",
-            effectiveness: "High"
-          },
-          {
-            type: "Natural Predators",
-            icon: "🐛",
-            description: "Encourage beneficial insects like braconid wasps and parasitic flies",
-            effectiveness: "Medium"
-          },
-          {
-            type: "Organic Treatment",
-            icon: "🌿",
-            description: "Apply Bt (Bacillus thuringiensis) spray for effective biological control",
-            effectiveness: "High"
-          },
-          {
-            type: "Prevention",
-            icon: "🛡️",
-            description: "Regular inspection, crop rotation, and companion planting with basil",
-            effectiveness: "Medium"
-          }
-        ]
+
+    try {
+      console.log("in handleiamge");
+
+      console.log("selected image", selectedImage)
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+      setIsUploading(true);
+      const res = await axios.post(`${API_BASE}/upload/single`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+      if (res.data) {
+        console.log("Image upload successfull", res.data);
+      }
+      else {
+        console.log("Image upload failed");
+        return;
+      }
+      setImageUrl(res.data.uploaded_url)
+      setIsUploading(false);
+
+      setIsAnalyzing(true);
+      const analyzeRes = await axios.post(`${API_BASE}/api_model/pest_detection_and_analyze`, {
+        image_url: res.data.uploaded_url,
+        crop,
+        description,
+      });
+      setResults(analyzeRes.data);
+    } catch (err) {
+
+    }
+    finally {
       setIsAnalyzing(false);
-    }, 2000);
+
+    }
   };
 
   const resetAnalysis = () => {
@@ -71,6 +75,8 @@ const PestExpert = () => {
     setResults(null);
     setCrop("");
     setDescription("");
+    setImageUrl("");
+    setIsAnalyzing(false);
   };
 
   return (
@@ -199,31 +205,49 @@ const PestExpert = () => {
               {/* Analyze Button */}
               <motion.button
                 onClick={handleAnalyze}
-                disabled={!selectedImage || isAnalyzing}
+                disabled={!selectedImage || isAnalyzing || isUploading  || results}
                 whileHover={{ scale: selectedImage && !isAnalyzing ? 1.02 : 1 }}
                 whileTap={{ scale: selectedImage && !isAnalyzing ? 0.98 : 1 }}
                 className={`
                   w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
-                  ${selectedImage && !isAnalyzing 
-                    ? 'bg-gradient-primary text-primary-foreground hover:shadow-md' 
+                  ${selectedImage && !isAnalyzing && !isUploading
+                    ? 'bg-gradient-primary text-primary-foreground hover:shadow-md'
                     : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }
                 `}
               >
-                {isAnalyzing ? (
+                {isAnalyzing || isUploading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Analyzing...
+                    {isUploading ? (
+                      <>Uploading...</>) :
+                      (<>Analyzing...</>)}
+
                   </>
-                ) : (
-                  <>
-                    <Bug className="w-5 h-5" />
-                    Analyze Image
-                  </>
-                )}
+                ) :
+
+                  (
+                    <>
+                      <Bug className="w-5 h-5" />
+                      Analyze Image
+                    </>
+                  )}
+
+
               </motion.button>
+              {results && (
+                <motion.button
+                  onClick={resetAnalysis}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-3 w-full py-2 rounded-lg font-medium transition-all duration-200 bg-red-100 text-red-600 hover:bg-red-200"
+                >
+                  Reset Analysis
+                </motion.button>
+              )}
             </div>
           </motion.div>
+
 
           {/* Results Section */}
           <motion.div
@@ -239,79 +263,93 @@ const PestExpert = () => {
                   exit={{ opacity: 0, y: -20 }}
                   className="space-y-6"
                 >
-                  {/* Prediction Card */}
+                  {/* Detected Disease Card */}
                   <div className="agricultural-card p-6">
                     <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-3">
                       <AlertTriangle className="w-5 h-5 text-red-500" />
-                      Identification Results
+                      Identification Result
                     </h3>
-                    
+
                     <motion.div
                       initial={{ scale: 0.95 }}
                       animate={{ scale: 1 }}
                       className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-4"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-lg font-semibold text-red-800">
-                          {results.prediction.name}
-                        </h4>
-                        <span className="text-2xl font-bold text-red-600">
-                          {results.prediction.confidence}%
-                        </span>
-                      </div>
-                      <p className="text-sm text-red-700 italic">
-                        {results.prediction.scientificName}
-                      </p>
-                      <div className="mt-3">
-                        <div className="w-full bg-red-200 rounded-full h-2">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${results.prediction.confidence}%` }}
-                            transition={{ delay: 0.5, duration: 1 }}
-                            className="bg-red-600 h-2 rounded-full"
-                          />
-                        </div>
-                      </div>
+                      <h4 className="text-lg font-semibold text-red-800">
+                        {results.detected_disease}
+                      </h4>
                     </motion.div>
                   </div>
 
-                  {/* Solutions Card */}
+                  {/* Cure & Treatment */}
                   <div className="agricultural-card p-6">
                     <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-3">
                       <Shield className="w-5 h-5 text-primary" />
-                      Treatment Solutions
+                      Cure & Treatment
                     </h3>
-                    
+
                     <div className="space-y-4">
-                      {results.solutions.map((solution: any, index: number) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="border border-border rounded-lg p-4 hover:shadow-soft transition-shadow"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="text-2xl">{solution.icon}</div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-medium text-foreground">
-                                  {solution.type}
-                                </h4>
-                                <span className={`
-                                  text-xs px-2 py-1 rounded-full
-                                  ${solution.effectiveness === 'High' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                                `}>
-                                  {solution.effectiveness}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {solution.description}
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                      {results.cure_and_treatment_methods?.map(
+                        (treatment: string, index: number) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                          >
+                            <p className="text-sm text-purple-900">{treatment}</p>
+                          </motion.div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preventive Measures */}
+                  <div className="agricultural-card p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-3">
+                      <Shield className="w-5 h-5 text-green-600" />
+                      Preventive Measures
+                    </h3>
+
+                    <div className="space-y-4">
+                      {results.preventive_measures?.map(
+                        (measure: string, index: number) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                          >
+                            <p className="text-sm text-green-900">{measure}</p>
+                          </motion.div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Other Useful Agricultural Advice */}
+                  <div className="agricultural-card p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-3">
+                      <Shield className="w-5 h-5 text-blue-600" />
+                      Other Useful Agricultural Advice
+                    </h3>
+
+                    <div className="space-y-4">
+                      {results.other_useful_agricultural_advice?.map(
+                        (advice: string, index: number) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                          >
+                            <p className="text-sm text-blue-900">{advice}</p>
+                          </motion.div>
+                        )
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -336,6 +374,7 @@ const PestExpert = () => {
               )}
             </AnimatePresence>
           </motion.div>
+
         </div>
       </div>
     </div>
