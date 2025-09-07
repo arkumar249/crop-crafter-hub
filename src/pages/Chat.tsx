@@ -1,7 +1,6 @@
-//git
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Paperclip, Bot, User, Mic } from "lucide-react";
+import { Send, Paperclip, Bot, User, Mic, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
@@ -20,20 +19,14 @@ interface Message {
 }
 
 const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "bot",
-      content:
-        "मेहनत करने वालों की कभी हार नहीं होती। मैं आपकी कृषि संबंधी सभी प्रश्नों में आपकी सहायता के लिए यहाँ हूँ। आज आप क्या जानना चाहेंगे?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [chat_bot_state, set_chat_bot_state] = useState("main");
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Mic State
   const [micActive, setMicActive] = useState(false);
@@ -75,6 +68,61 @@ const Chat = () => {
   };
 
   useEffect(() => {
+    const loadChat = async () => {
+      try {
+        let session_Id = localStorage.getItem("chat_session_id");
+        const req_payload = {
+          userid: "33d125b8-c2b0-44be-9797-fe02959f363b",
+          chat_type: chat_bot_state,
+        };
+
+        if (!session_Id) {
+          const res = await axios.post(`${API_BASE}/chats/createSession`, req_payload, {
+            headers: { "Content-Type": "application/json" },
+          });
+          session_Id = res.data.id;
+          setSessionId(session_Id);
+          localStorage.setItem("chat_session_id", session_Id);
+        } else {
+          setSessionId(session_Id);
+        }
+
+        const res = await axios.get(`${API_BASE}/chats/messages/${session_Id}`);
+        const res_data = res.data;
+
+        const formatted = res_data.flatMap((msg: any) => {
+          const items: Message[] = [];
+          if (msg.user_query) {
+            items.push({
+              id: msg.id + "-user",
+              type: "user",
+              content: msg.user_query,
+              timestamp: new Date(msg.created_at),
+              images: msg.imageUrls || [],
+            });
+          }
+          if (msg.ai_answer) {
+            items.push({
+              id: msg.id + "-bot",
+              type: "bot",
+              content: msg.ai_answer,
+              timestamp: new Date(msg.created_at),
+              images: [],
+            });
+          }
+          return items;
+        });
+
+        setMessages(formatted);
+      } catch (error) {
+        console.error("Failed to load chat history", error);
+      }
+    };
+
+    loadChat();
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -91,17 +139,17 @@ const Chat = () => {
       throw new Error("Image upload failed");
     }
 
-    console.log("Image upload successful", res.data);
     return res.data.uploaded_url;
   }
 
   // ✅ Send query to backend
   async function sendQueryToBackend(query: string, imageUrl?: string): Promise<any> {
     const payload = {
-      session_id: "57c180f5-78c2-4268-8b18-7c9ef3a0e147", // 👈 replace dynamically if needed
+      session_id: sessionId,
       user_query: query,
       role: "user",
       imageUrls: imageUrl ? [imageUrl] : [],
+      domain: chat_bot_state,
     };
 
     const res = await axios.post(`${API_BASE}/chats/addMessage`, payload, {
@@ -144,7 +192,6 @@ const Chat = () => {
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error(error);
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         type: "bot",
@@ -156,7 +203,7 @@ const Chat = () => {
     } finally {
       setIsTyping(false);
       if (selectedImage) {
-        URL.revokeObjectURL(userMessage.images?.[0] || ""); 
+        URL.revokeObjectURL(userMessage.images?.[0] || "");
       }
       setSelectedImage(null);
       resetTranscript();
@@ -177,15 +224,29 @@ const Chat = () => {
     }
   };
 
+  // ✅ New Chat button handler
+  const handleNewChat = async () => {
+    localStorage.removeItem("chat_session_id");
+    setSessionId(null);
+    setMessages([]);
+  };
+
+  // ✅ Empty state messages based on chat_bot_state
+  const emptyMessages: Record<string, string> = {
+    main: "Welcome to AI Farm Assistant 🌱. Ask me anything about farming!",
+    weather: "🌦 No weather chats yet. Ask about today's forecast!",
+    pest: "🐛 No pest diagnosis yet. Upload an image to start.",
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Chat Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 border-b border-border bg-card/50 backdrop-blur-sm"
+        className="p-6 border-b border-border bg-card/50 backdrop-blur-sm flex items-center"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
           <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
             <Bot className="w-6 h-6 text-primary-foreground" />
           </div>
@@ -202,73 +263,88 @@ const Chat = () => {
             Online
           </div>
         </div>
+
+        {/* ✅ New Chat Button */}
+        <Button
+          onClick={handleNewChat}
+          variant="outline"
+          className="ml-4 flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> New Chat
+        </Button>
       </motion.div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <AnimatePresence>
-          {messages.map((message) => (
-            <div key={message.id} className="flex flex-col">
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                className={`flex ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                } gap-3`}
-              >
-                {message.type === "bot" && (
-                  <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-
-                <div
-                  className={
-                    message.type === "user"
-                      ? "bg-gradient-to-r from-green-100 to-green-200 text-green-900 rounded-2xl rounded-br-md px-4 py-3 max-w-xs shadow-sm"
-                      : "chat-bubble-bot"
-                  }
+        {messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-lg text-center">
+            {emptyMessages[chat_bot_state] || "Start a conversation with AgriBot 🌿"}
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((message) => (
+              <div key={message.id} className="flex flex-col">
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                  transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                  className={`flex ${
+                    message.type === "user" ? "justify-end" : "justify-start"
+                  } gap-3`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-
-                  {message.images && (
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {message.images.map((src, idx) => (
-                        <img
-                          key={idx}
-                          src={src}
-                          alt="uploaded"
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                      ))}
+                  {message.type === "bot" && (
+                    <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-4 h-4 text-primary-foreground" />
                     </div>
                   )}
 
-                  <p className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
+                  <div
+                    className={
+                      message.type === "user"
+                        ? "bg-gradient-to-r from-green-100 to-green-200 text-green-900 rounded-2xl rounded-br-md px-4 py-3 max-w-xs shadow-sm"
+                        : "chat-bubble-bot"
+                    }
+                  >
+                    <p className="text-sm leading-relaxed">{message.content}</p>
 
-                {message.type === "user" && (
-                  <div className="w-8 h-8 bg-gradient-earth rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-earth-dark" />
+                    {message.images && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {message.images.map((src, idx) => (
+                          <img
+                            key={idx}
+                            src={src}
+                            alt="uploaded"
+                            className="w-20 h-20 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs opacity-70 mt-2">
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {message.type === "user" && (
+                    <div className="w-8 h-8 bg-gradient-earth rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-earth-dark" />
+                    </div>
+                  )}
+                </motion.div>
+
+                {message.type === "bot" && (
+                  <div className="ml-11 mt-1">
+                    <TTSPlayer text={message.content} />
                   </div>
                 )}
-              </motion.div>
-
-              {message.type === "bot" && (
-                <div className="ml-11 mt-1">
-                  <TTSPlayer text={message.content} />
-                </div>
-              )}
-            </div>
-          ))}
-        </AnimatePresence>
+              </div>
+            ))}
+          </AnimatePresence>
+        )}
 
         {isTyping && (
           <motion.div

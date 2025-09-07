@@ -336,7 +336,7 @@ useEffect(() => {
                 {plansList.map(plan => (
                   <li key={plan.date} className={`p-2 rounded ${plan.status === "done" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"}`}>
                     <p className="text-sm font-medium">{new Date(plan.date).toLocaleDateString()}</p>
-                    <p className="text-xs">Time: {plan.time}, Method: {plan.method}</p>
+                    <p className="text-xs">Method: {plan.method}</p>
                     {plan.crop && <p className="text-xs">Crop: {plan.crop}</p>}
                     <p className="text-xs font-semibold">Status: {plan.status}</p>
                   </li>
