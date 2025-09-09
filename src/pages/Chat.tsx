@@ -152,6 +152,10 @@ const Chat = () => {
       domain: chat_bot_state,
     };
 
+
+    // backend query
+    // No need to change anything here
+
     const res = await axios.post(`${API_BASE}/chats/addMessage`, payload, {
       headers: { "Content-Type": "application/json" },
     });

@@ -20,7 +20,8 @@ const Signup = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    role: "" // <-- Added role field
   });
 
   const getPasswordStrength = (password: string) => {
@@ -152,6 +153,23 @@ const Signup = () => {
               }
               className="w-full px-4 py-3 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Role
+            </label>
+            <input
+              type="text"
+              value={formData.role}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Enter your role (e.g. farmer, agronomist)"
               required
             />
           </div>

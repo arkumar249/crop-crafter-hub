@@ -51,11 +51,19 @@ const Index = () => {
 
   return (
     <div className="min-h-full bg-gradient-to-br from-background via-background to-muted/30">
+      
+      {/* Navbar */}
+      <header className="w-full flex justify-between items-center px-6 py-4 absolute top-0 left-0">
+        <div className="text-2xl font-bold text-foreground">🌱 AgriBot</div>
+       
+      </header>
+      
+
       {/* Hero Section */}
       <motion.section 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="px-6 py-16"
+        className="px-6 py-24"
       >
         <div className="max-w-6xl mx-auto text-center">
           <motion.div
@@ -79,15 +87,16 @@ const Index = () => {
             </p>
           </motion.div>
 
+          {/* Hero CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+            className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center mb-12"
           >
             <Link 
               to="/chat"
-              className="agricultural-button group flex items-center gap-2 text-lg px-8 py-4"
+              className="agricultural-button group flex items-center gap-2 text-lg px-8 py-4 bg-white text-black"
             >
               Start Farming Chat
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -97,6 +106,13 @@ const Index = () => {
               className="bg-background text-foreground border-2 border-border font-medium px-8 py-4 rounded-lg transition-all duration-300 hover:bg-muted hover:scale-105 text-lg"
             >
               Explore Tools
+            </Link>
+            {/* New Green Get Started button */}
+            <Link 
+              to="/signup"
+              className="bg-green-600 text-white font-medium px-8 py-4 rounded-lg transition-all duration-300 hover:bg-green-600 hover:scale-105 text-lg"
+            >
+              Get Started
             </Link>
           </motion.div>
 
@@ -190,13 +206,21 @@ const Index = () => {
               Join thousands of farmers already using AgriBot to increase yields 
               and optimize their farming operations.
             </p>
-            <Link 
-              to="/chat"
-              className="agricultural-button group text-lg px-8 py-4 inline-flex items-center gap-2"
-            >
-              Start Your Journey
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Link 
+                to="/signup"
+                className="agricultural-button group text-lg px-8 py-4 inline-flex items-center gap-2"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link 
+                to="/login"
+                className="bg-background text-foreground border-2 border-border font-medium px-8 py-4 rounded-lg transition-all duration-300 hover:bg-muted hover:scale-105 text-lg"
+              >
+                Login
+              </Link>
+            </div>
           </div>
         </div>
       </motion.section>
