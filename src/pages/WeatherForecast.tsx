@@ -13,7 +13,7 @@ import {
   Navigation,
 } from "lucide-react";
 
-const API_KEY = "94fcf5aaafc2d1c3f1d0c7e4b81a120d";
+const WEATHER_API_KEY =import.meta.env.VITE_WEATHER_API_KEY;
 
 const WeatherForecast = () => {
   const [location, setLocation] = useState(""); // City or coordinates
@@ -54,7 +54,7 @@ const WeatherForecast = () => {
   const fetchWeather = async (lat: number, lon: number) => {
     try {
       const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`
       );
       const data = await res.json();
 
@@ -112,7 +112,7 @@ const WeatherForecast = () => {
   const fetchLocationName = async (lat: number, lon: number) => {
     try {
       const res = await fetch(
-        `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${API_KEY}`
+        `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${WEATHER_API_KEY}`
       );
       const data = await res.json();
       if (data && data.length > 0) {
@@ -155,7 +155,7 @@ const WeatherForecast = () => {
       try {
         setLoading(true);
         const res = await fetch(
-          `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${API_KEY}`
+          `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${WEATHER_API_KEY}`
         );
         const data = await res.json();
         if (data && data.length > 0) {
