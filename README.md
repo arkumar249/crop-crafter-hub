@@ -1,2 +1,2 @@
 
-### Chat + fertilizer guide
+### Agri Assistant Frontend
